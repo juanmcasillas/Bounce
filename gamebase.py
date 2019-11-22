@@ -108,6 +108,7 @@ class Physics:
 class pyGameApp:
     def __init__(self, screen_size, caption, fps=60):
         self._running = False
+        self._pause = False
         self.screen = None
         self.config = Config()
         self.config.screen_size = screen_size
@@ -115,7 +116,7 @@ class pyGameApp:
         self.config.screen_center = (self.config.screen_witdh/2, self.config.screen_height/2)
         self.config.caption = caption
         self.config.fps = fps
-    
+        
     def on_init(self):
         pygame.init()
         pygame.font.init()
@@ -131,7 +132,7 @@ class pyGameApp:
             if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE): 
                 self._running = False
                 return
-
+            
     def on_loop(self):
         pass
 
@@ -150,7 +151,11 @@ class pyGameApp:
      
         while( self._running ):
 
+
             self.on_event()
+            if self._pause:
+                continue
+
             self.on_loop()
             self.on_render()
             self.on_step()
@@ -183,7 +188,7 @@ class pyGameAppPhysics(pyGameApp):
         self.physics.surface.fill((0,0,0))
 
         for wall in self.walls:
-            self.drawPolygons(wall,color=(255,100,100))
+            self.drawBodies(wall,color=(255,100,100))
 
         self.physics.draw(self.screen,  self.viewport)
 
@@ -226,28 +231,53 @@ class pyGameAppPhysics(pyGameApp):
 
     def create_world_bounds(self):
        "create a static objects fencing all the world. (walls)"
-       self.walls = []
-       ww = 0.1 # meters (wall width)
-       w = self.physics.world_rect.width
-       h = self.physics.world_rect.height
+       "deprecated"
+       pass
+    #    self.walls = []
+    #    ww = 0.1 # meters (wall width)
+    #    w = self.physics.world_rect.width
+    #    h = self.physics.world_rect.height
 
-       self.walls.append( self.world.CreateStaticBody(position=(ww,h/2),   shapes=b2PolygonShape(box=(ww,h/2))))
-       self.walls.append( self.world.CreateStaticBody(position=(w-ww,h/2), shapes=b2PolygonShape(box=(ww,h/2))))
-       self.walls.append( self.world.CreateStaticBody(position=(w/2,ww),   shapes=b2PolygonShape(box=(w/2,ww))))
-       self.walls.append( self.world.CreateStaticBody(position=(w/2,h-ww), shapes=b2PolygonShape(box=(w/2,ww))))
+    #    self.walls.append( self.world.CreateStaticBody(position=(ww,h/2),   shapes=b2PolygonShape(box=(ww,h/2))))
+    #    self.walls.append( self.world.CreateStaticBody(position=(w-ww,h/2), shapes=b2PolygonShape(box=(ww,h/2))))
+    #    self.walls.append( self.world.CreateStaticBody(position=(w/2,ww),   shapes=b2PolygonShape(box=(w/2,ww))))
+    #    self.walls.append( self.world.CreateStaticBody(position=(w/2,h-ww), shapes=b2PolygonShape(box=(w/2,ww))))
 
-    def drawPolygons(self, body, color=(255,100,100), wireFrame=False, surface=None):
+    def drawBodies(self, body, color=None, wireFrame=False, surface=None):
         surface = surface or self.physics.surface
+        
         def zoom(v):
             return b2Vec2(v) * self.zoom
+        def int_tuple(v):
+            return (int(v[0]), int(v[1]) )
+
+            
+        if body.type == Box2D.b2_dynamicBody:
+            color = color or (100,255,100)
+        if body.type == Box2D.b2_staticBody:
+            color = color or (100,100,100)
+
 
         for fixture in body.fixtures:
             shape = fixture.shape
-            vertices = [zoom(self.physics.ToPixels(body.transform * v)) for v in shape.vertices]
-            if not wireFrame:
-                pygame.draw.polygon(surface, color, vertices)
+      
+            if isinstance(shape, b2CircleShape):
+                
+                ## todo, circle here
+                if not wireFrame:
+                    center = zoom(self.physics.ToPixels(shape.pos))
+                    radius, _ = self.physics.ScaleToPixels((shape.radius,0))
+
+                    pygame.draw.circle(surface, color, int_tuple(center), int(radius*self.zoom))
+                else:
+                    pygame.draw.circle(surface, color, int_tuple(center), int(radius*self.zoom), 1)
+
             else:
-                pygame.draw.polygon(surface, color, vertices,1)
+                vertices = [zoom(self.physics.ToPixels(body.transform * v)) for v in shape.vertices]
+                if not wireFrame:
+                    pygame.draw.polygon(surface, color, vertices)
+                else:
+                    pygame.draw.polygon(surface, color, vertices,1)
     
 
 #
@@ -343,6 +373,7 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         
 
     def Zoom(self, value):
+        "for now, I don't know how to implement that on the Physics layer"
         pass
         #self.zoom += value
         #w,h = self.wmap.world_size
@@ -373,6 +404,8 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
             if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE): 
                 self._running = False
                 return
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                self._pause = not self._pause                
         
         pressed = pygame.key.get_pressed()
         amount = (0,0)
@@ -399,7 +432,6 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
             self.Zoom(-0.01)
             # debug the objects
 
- 
         if pressed[pygame.K_q]:
             impulse = self.starship.body.mass * 1.2
             angle =  self.starship.body.angle + math.pi/2
@@ -413,6 +445,9 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         if pressed[pygame.K_p]:
             self.starship.body.ApplyAngularImpulse(impulse=-1, wake=True)
 
+  
+  
+
         self.wmap.layer.scroll(amount)
         self.viewport.move_ip(amount)
  
@@ -423,7 +458,9 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         self.physics = Physics(self.config, self.wmap.world_size)
         self.world = b2World(gravity = self.physics.gravity, doSleep=self.physics.doSleep)       
         self.physics.debug()
-        self.create_world_bounds()
+
+        self.loadBodiesFromMap()
+        #self.create_world_bounds()
         
         
         self.starship = Starship(self)
@@ -433,9 +470,10 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
     def on_render(self):
         
         self.physics.surface.fill((0,0,0,0)) # alpha blending, boy!
-        for wall in self.walls:
-            self.drawPolygons(wall,color=(255,100,100))
-        self.drawPolygons(self.starship.body, color=(255,0,0), wireFrame=True)
+        for body in self.bodies:
+            self.drawBodies(body)
+
+        self.drawBodies(self.starship.body, wireFrame=True)
 
         self.sprites.draw(self.physics.surface)
 
@@ -444,7 +482,7 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
 
         self.viewport_surface.fill((0,0,0,0))
         self.viewport_surface.blit(self.physics.surface, (0,0), self.viewport)
-        surfaces.append( (self.viewport_surface, self.viewport_surface.get_rect(), 5))
+        surfaces.append( (self.viewport_surface, self.viewport_surface.get_rect(), 5)) # 0 works fine over the bg, behind the planets
         self.wmap.layer.draw(self.screen, self.screen.get_rect(), surfaces)
 
         #by my sidl
@@ -455,9 +493,18 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         self.sprites.update()
         # dont zoom, for now
         
-        self.wmap.layer.center( self.starship.rect.center)
+        b = pygame.mouse.get_pressed()
+        
+        # TODO, fix the visualizer.
+        pos = self.starship.rect.center
+        if b[0]:
+            i,j = (0,0)
+            x,y = pygame.mouse.get_pos()
+            pos = ( i+x, j+y)
+       
+        self.wmap.layer.center(pos)
+        self.viewport.center = pos
 
-        self.viewport.center = self.starship.rect.center  
         # do some clip for intelligent camera here.
         if self.viewport.top < 0:
             self.viewport.top = 0
@@ -469,5 +516,105 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         if self.viewport.right >  self.physics.worldPixelSize()[0]:
             self.viewport.right = self.physics.worldPixelSize()[0]
 
+    def loadBodiesFromMap(self):
+        self.bodies = [] 
+        try:
+            group = self.wmap.tmx.get_layer_by_name("objects")
+      
+            for obj in group:
+                #
+                # process the defined elements for objects.
+                #
+                if obj.type and obj.type.lower() == "wallcircle":
+                    print("wallcircle found: %s" % obj.name)
+                    center = (0,0)
+                    rectsize = (0,0)
+                    
+                    # its a circle, calculate center and radious
+                    #b2CircleShape(pos=(1, 2), radius=0.5)
+                    center =  ( obj.x + (obj.width/2), obj.y + (obj.height / 2))
+                    radius = max(obj.width/2, obj.height/2)
+                    print(center, radius)
+                    radius, _ = self.physics.ScaleToWorld((radius,0))
+
+                    body = self.world.CreateStaticBody(
+                            #position=self.physics.ToWorld(center),   
+                            shapes=b2CircleShape(pos=self.physics.ToWorld(center), radius=radius)
+                            )
+
+                if obj.type and obj.type.lower() == "test":
+                    print("test found: %s" % obj.name)
+                    center = (0,0)
+                    rectsize = (0,0)
+                    if not hasattr(obj,"points"):
+                        # its a rectangle, easy
+                        # x, y, height, width
+                        ## self.world.CreateStaticBody(position=(ww,h/2),   shapes=b2PolygonShape(box=(ww,h/2))))
+                        center =  ( obj.x + (obj.width/2), obj.y + (obj.height / 2))
+                        rectsize = (obj.width/2, obj.height/2)
+                        print(obj.x, obj.y, obj.width, obj.height)
+                        print(center, rectsize)
+
+                        body = self.world.CreateDynamicBody(
+                                position = self.physics.ToWorld(center),
+                                angle = 0,
+                                fixtures = b2FixtureDef(
+                                    shape = b2PolygonShape(box= self.physics.ScaleToWorld(rectsize)),
+                                    density = obj.properties['density'],
+                                    friction = obj.properties['friction'],
+                                    restitution = obj.properties['restitution']
+                                ))            
+                   
+                if obj.type and obj.type.lower() == "wall":
+                    print("wall found: %s" % obj.name)
+                    center = (0,0)
+                    rectsize = (0,0)
+                    if not hasattr(obj,"points"):
+                        # its a rectangle, easy
+                        # x, y, height, width
+                        ## self.world.CreateStaticBody(position=(ww,h/2),   shapes=b2PolygonShape(box=(ww,h/2))))
+                        center =  ( obj.x + (obj.width/2), obj.y + (obj.height / 2))
+                        rectsize = (obj.width/2, obj.height/2)
+                        print(obj.x, obj.y, obj.width, obj.height)
+                        print(center, rectsize)
+
+                        body = self.world.CreateStaticBody(position=self.physics.ToWorld(center),   
+                            shapes=b2PolygonShape(box=self.physics.ScaleToWorld(rectsize)))
+                   
+                    else:
+                        # vertice chain so calculate the centroid.
+                        # create a static body here
+                        # first, get the points and calculate the center of the polygon.
+                        # calculate the centroid.
+                        x = [p[0] for p in obj.points]
+                        y = [p[1] for p in obj.points]
+                        centroid = (sum(x) / len(obj.points), sum(y) / len(obj.points))
+                        
+                        # now, translate all the points to the 0,0:
+                        xlate = []
+                        centroid = b2Vec2(centroid)
+                        for p in obj.points:
+                            # centroid is measure from (0.0) was is upper left,
+                            # in the world coords, start in bottom left, so just
+                            # swap the points y coord (flipping around axis 0)
+                            px,py = self.physics.ScaleToWorld(b2Vec2(p) - centroid)
+                            xlate.append( (px,-py)  )
+                        
+                        for p in obj.points:
+                            print(p, centroid)
+                        
+                        for p in xlate:
+                            print(p)
+
+                        body = self.world.CreateStaticBody(position=self.physics.ToWorld(centroid),   
+                                shapes=b2PolygonShape(vertices=xlate)) ## the vertice order is CCW
+                  
+
+                self.bodies.append(body)
+             
+
+
+        except ValueError as e:
+            print("Can't find objects layer in the map. Ignoring them")
 
     
