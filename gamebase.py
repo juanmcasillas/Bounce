@@ -243,7 +243,7 @@ class pyGameAppPhysics(pyGameApp):
 
         for fixture in body.fixtures:
             shape = fixture.shape
-            vertices = [self.physics.ToPixels(body.transform * zoom(v)) for v in shape.vertices]
+            vertices = [zoom(self.physics.ToPixels(body.transform * v)) for v in shape.vertices]
             if not wireFrame:
                 pygame.draw.polygon(surface, color, vertices)
             else:
@@ -315,6 +315,11 @@ class Starship(pygame.sprite.Sprite):
 
 
 
+
+
+
+
+
 class pyGameAppPhysicsMap(pyGameAppPhysics):
     def __init__(self, screen_size, caption, mapfile, fps=60, world_size=None):
         super().__init__(screen_size, caption, fps)
@@ -335,6 +340,15 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         w = self.wmap.tmx.width * self.wmap.tmx.tilewidth
         h = self.wmap.tmx.height * self.wmap.tmx.tileheight
         self.wmap.world_size = (w, h)
+        
+
+    def Zoom(self, value):
+        pass
+        #self.zoom += value
+        #w,h = self.wmap.world_size
+        #self.wmap.layer.zoom = self.zoom
+        #self.physics.surface = pygame.transform.scale(self.physics.surface, ( int(w*self.zoom), int(h*self.zoom)))
+        #self.wmap.world_size = (w*self.zoom, h*self.zoom)
         
 
     def initMap(self):
@@ -378,11 +392,11 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
             amount = (0,+amountDelta)         
         
         if pressed[pygame.K_PLUS]:            
-            self.zoom += 0.1
+            self.Zoom(0.01)
             # debug the objects
 
         if pressed[pygame.K_MINUS]:            
-            self.zoom -= 0.1
+            self.Zoom(-0.01)
             # debug the objects
 
  
@@ -439,10 +453,11 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         
     def on_loop(self):
         self.sprites.update()
+        # dont zoom, for now
+        
         self.wmap.layer.center( self.starship.rect.center)
 
         self.viewport.center = self.starship.rect.center  
-
         # do some clip for intelligent camera here.
         if self.viewport.top < 0:
             self.viewport.top = 0
