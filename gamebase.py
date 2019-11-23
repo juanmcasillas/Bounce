@@ -265,7 +265,16 @@ class pyGameAppPhysics(pyGameApp):
         for fixture in body.fixtures:
             shape = fixture.shape
       
-            if isinstance(shape, b2CircleShape):
+            if isinstance(shape, b2ChainShape):
+                vertices = [zoom(self.physics.ToPixels(body.transform * v)) for v in shape.vertices]
+                vertices = vertices[:-1]
+                if not wireFrame:  
+                    pygame.draw.lines(surface, color, False, vertices)
+                else:
+                    pygame.draw.lines(surface, color, False, vertices,1)
+
+
+            elif isinstance(shape, b2CircleShape):
                 
                 ## todo, circle here
                 if not wireFrame:
@@ -477,6 +486,26 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
             #
             # process the defined elements for objects.
             #
+            if obj.type and obj.type.lower() == "wallline":
+                print("wallline found: %s" % obj.name)
+                # all points are defined from the base 
+                #  <object id="30" name="object5" type="wallline" x="448" y="320">
+                # <polyline points="0,0 -128,64 -256,0 -256,64 -384,64"/>
+                # </object>
+                orig = (0, 0)
+                # now, translate all the points to the 0,0:
+                xlate = []
+                for p in obj.points:
+                    px,py = self.physics.ToWorld(b2Vec2(p) + orig)
+                    xlate.append((px,py)) 
+                
+                for p in xlate:
+                    print(p,len(xlate))
+
+                body = self.world.CreateStaticBody(shapes=b2ChainShape(vertices=xlate)) ## the vertice order is CCW
+
+
+
             if obj.type and obj.type.lower() == "wallcircle":
                 print("wallcircle found: %s" % obj.name)
                 center = (0,0)
@@ -494,6 +523,7 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
                         shapes=b2CircleShape(pos=self.physics.ToWorld(center), radius=radius)
                         )
 
+            # dinamic object test
             if obj.type and obj.type.lower() == "test":
                 print("test found: %s" % obj.name)
                 center = (0,0)

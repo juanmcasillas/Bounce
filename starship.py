@@ -67,7 +67,7 @@ class Starship(pygame.sprite.Sprite):
         self.body = self.app.world.CreateDynamicBody(
                 position = self.app.physics.ToWorld(self.rect.center),
                 #angle =math.pi/4.2,
-                angle = 0,
+                angle = math.radians(-starship.rotation),
                 fixtures = b2FixtureDef(
                     shape = b2PolygonShape(box= wcenter),
                     density = starship.properties['density'],
