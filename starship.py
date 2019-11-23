@@ -3,34 +3,15 @@ from Box2D import *
 import math
 
 class Starship(pygame.sprite.Sprite):
-    def __init__(self, app, init=True):
+    def __init__(self, app):
         self.app = app
         pygame.sprite.Sprite.__init__(self)
-        if not init:
-            return
-
-
-        self.fname = "assets/starship.png"
-        self.image = pygame.image.load(self.fname)
-        self.orig_image = self.image.copy()
-        self.rect = self.image.get_rect()
-        # center the starship in the CENTER of the screen.
-        self.move_from_center(self.app.config.screen_center)
+ 
+        self.loadFromMap()
 
         #define the Physics body
 
-        wcenter = self.app.physics.ScaleToWorld( ( self.rect.width/2, self.rect.height /2))
-
-        self.body = self.app.world.CreateDynamicBody(
-                position = self.app.physics.ToWorld(self.rect.center),
-                #angle =math.pi/4.2,
-                angle = 0,
-                fixtures = b2FixtureDef(
-                    shape = b2PolygonShape(box= wcenter),
-                    density = 1,
-                    friction = 5,
-                    restitution = 0.1)
-                )  
+  
 
 
     def move_from_center( self, pos ):
@@ -80,6 +61,7 @@ class Starship(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.move_from_center((starship.x, starship.y))
 
+        #define the Physics body    
         wcenter = self.app.physics.ScaleToWorld( ( self.rect.width/2, self.rect.height /2))
 
         self.body = self.app.world.CreateDynamicBody(

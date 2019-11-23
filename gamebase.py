@@ -411,8 +411,7 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         #self.create_world_bounds()
         
         
-        self.starship = Starship(self,init=False) # delay init...
-        self.starship.loadFromMap()
+        self.starship = Starship(self) 
         self.initMap()
         self.sprites = pygame.sprite.RenderPlain((self.starship))
 
