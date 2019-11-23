@@ -24,9 +24,16 @@ https://github.com/fathat/glsvg
 https://github.com/bitcraft/pyscroll
 https://github.com/bitcraft/pytmx
 
-
+```
 // deprecated, not used https://github.com/los-cocos/cocos
+```
 
 The maps are created with [Tiled](https://www.mapeditor.org)
 You should define all the map, using tiles (no background images, doesn't work)
 Try to manage the objects right now.
+
+
+# Using MapEditor
+
+template for starship -> use it, then right click -> detach, if not, the object is stored as template and pytxml can't load it.
+also put all the files top->down (images down in the dir)
