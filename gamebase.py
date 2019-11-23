@@ -362,8 +362,9 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
                 self._running = False
                 return
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                self._pause = not self._pause                
-        
+                self._pause = not self._pause     
+                return
+
         pressed = pygame.key.get_pressed()
         amount = (0,0)
         amountDelta = 5
@@ -390,17 +391,21 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
             # debug the objects
 
         if pressed[pygame.K_q]:
-            impulse = self.starship.body.mass * 1.2
+  
+            impulse = self.starship.body.mass * 14 # 9.8 means don' climb, just anulate the gravity.
             angle =  self.starship.body.angle + math.pi/2
             y = math.sin(angle)*impulse
             x = math.cos(angle)*impulse
-            self.starship.body.ApplyLinearImpulse( (x,y), self.starship.body.worldCenter, wake=True )
+            self.starship.body.ApplyForce( (x,y), self.starship.body.worldCenter, wake=True )
         
         if pressed[pygame.K_o]:
-            self.starship.body.ApplyAngularImpulse(impulse=1, wake=True)
+            impulse = self.starship.body.mass * 14
+            self.starship.body.ApplyTorque(impulse, wake=True)
 
         if pressed[pygame.K_p]:
-            self.starship.body.ApplyAngularImpulse(impulse=-1, wake=True)
+            impulse = self.starship.body.mass * 14
+            self.starship.body.ApplyTorque(-impulse, wake=True)
+            ##self.starship.body.ApplyAngularImpulse(impulse=-impulse, wake=True)
 
   
   
@@ -422,7 +427,8 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         
         self.starship = Starship(self) 
         self.initMap()
-        self.sprites = pygame.sprite.RenderPlain((self.starship))
+        #self.sprites = pygame.sprite.RenderPlain((self.starship))
+        self.sprites = pygame.sprite.Group((self.starship))
 
     def on_render(self):
         
@@ -434,11 +440,17 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
 
         self.sprites.draw(self.physics.surface)
 
+        # for debbuging sprite rects
+        # pygame.draw.rect(self.physics.surface,(255,255,255),self.starship.rect,1)   
+
         # hack to use the plain render.
         surfaces = list()
 
         self.viewport_surface.fill((0,0,0,0))
         self.viewport_surface.blit(self.physics.surface, (0,0), self.viewport)
+
+
+
         surfaces.append( (self.viewport_surface, self.viewport_surface.get_rect(), 5)) # 0 works fine over the bg, behind the planets
         self.wmap.layer.draw(self.screen, self.screen.get_rect(), surfaces)
 

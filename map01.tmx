@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="2019.11.20" orientation="orthogonal" renderorder="left-up" compressionlevel="0" width="32" height="24" tilewidth="64" tileheight="64" infinite="0" nextlayerid="4" nextobjectid="37">
+<map version="1.2" tiledversion="2019.11.20" orientation="orthogonal" renderorder="left-up" compressionlevel="0" width="32" height="24" tilewidth="64" tileheight="64" infinite="0" nextlayerid="6" nextobjectid="44">
  <tileset firstgid="1" source="map01_bg.tsx"/>
  <tileset firstgid="769" source="map01_planets.tsx"/>
  <tileset firstgid="1219" source="starship.tsx"/>
+ <tileset firstgid="1220" source="engine.tsx"/>
  <layer id="1" name="bg" width="32" height="24">
   <data encoding="csv">
 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,
@@ -78,13 +79,6 @@
     <property name="restitution" type="float" value="1"/>
    </properties>
   </object>
-  <object id="28" name="starship" type="starship" gid="1219" x="96" y="402" width="61" height="80" rotation="24.6956">
-   <properties>
-    <property name="density" type="float" value="1"/>
-    <property name="friction" type="float" value="5"/>
-    <property name="restitution" type="float" value="0.1"/>
-   </properties>
-  </object>
   <object id="30" name="object5" type="wallline" x="708" y="762">
    <polyline points="0,0 -128,64 -256,0 -256,64 -384,64"/>
   </object>
@@ -131,5 +125,17 @@
    </properties>
    <ellipse/>
   </object>
+  <object id="37" name="starship" type="starship" gid="1219" x="148" y="266" width="61" height="80">
+   <properties>
+    <property name="density" type="float" value="1"/>
+    <property name="friction" type="float" value="5"/>
+    <property name="restitution" type="float" value="0.1"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="5" name="animations">
+  <object id="43" name="engine3" type="animation" gid="1225" x="1856" y="192" width="35" height="50"/>
+  <object id="42" name="engine2" type="animation" gid="1222" x="1792" y="192" width="35" height="50"/>
+  <object id="41" name="engine1" type="animation" gid="1220" x="1728" y="192" width="35" height="50"/>
  </objectgroup>
 </map>

@@ -3,5 +3,10 @@
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image width="61" height="80" source="assets/starship.png"/>
+  <objectgroup draworder="index" id="2">
+   <object id="1" name="engine" x="30" y="80">
+    <point/>
+   </object>
+  </objectgroup>
  </tile>
 </tileset>
