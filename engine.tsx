@@ -8,8 +8,8 @@
    <property name="posy" type="int" value="80"/>
   </properties>
   <animation>
-   <frame tileid="1" duration="100"/>
-   <frame tileid="0" duration="100"/>
+   <frame tileid="1" duration="50"/>
+   <frame tileid="0" duration="50"/>
   </animation>
  </tile>
  <tile id="1">
@@ -26,8 +26,8 @@
    <property name="posy" type="int" value="80"/>
   </properties>
   <animation>
-   <frame tileid="2" duration="100"/>
-   <frame tileid="3" duration="100"/>
+   <frame tileid="2" duration="50"/>
+   <frame tileid="3" duration="50"/>
   </animation>
  </tile>
  <tile id="3">
@@ -51,8 +51,8 @@
    <property name="posy" type="int" value="80"/>
   </properties>
   <animation>
-   <frame tileid="4" duration="100"/>
-   <frame tileid="5" duration="100"/>
+   <frame tileid="4" duration="50"/>
+   <frame tileid="5" duration="50"/>
   </animation>
  </tile>
 </tileset>

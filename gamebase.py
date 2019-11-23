@@ -293,6 +293,20 @@ class pyGameAppPhysics(pyGameApp):
                     pygame.draw.polygon(surface, color, vertices,1)
     
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #
 # This implementation LOADS a map and scrolls fine.
 # 
@@ -391,13 +405,16 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
             # debug the objects
 
         if pressed[pygame.K_q]:
-  
+            self.starship.engine.timer += self.clock.get_time()
+            
             impulse = self.starship.body.mass * 14 # 9.8 means don' climb, just anulate the gravity.
             angle =  self.starship.body.angle + math.pi/2
             y = math.sin(angle)*impulse
             x = math.cos(angle)*impulse
             self.starship.body.ApplyForce( (x,y), self.starship.body.worldCenter, wake=True )
-        
+        else:
+            self.starship.engine.timer = 0
+
         if pressed[pygame.K_o]:
             impulse = self.starship.body.mass * 14
             self.starship.body.ApplyTorque(impulse, wake=True)
