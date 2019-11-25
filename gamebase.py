@@ -11,7 +11,7 @@ import os
 import numpy
 
 from frect import FRect
-from starship import Starship
+from starship import *
 
 
 def render_text(surface, text, pos, size=24, color=(255,255,255), font=None):
@@ -340,6 +340,8 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         super().__init__(screen_size, caption, fps)
 
         self.wmap = WorldMap(mapfile)
+        self.objects = []
+        self.bodies = [] 
 
     def loadMap(self, screen_size):
         self.wmap.tmx = load_pygame(self.wmap.fname)
@@ -469,6 +471,7 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         self.add_keypressed_time(pygame.K_o)
         self.add_keypressed_time(pygame.K_p)
 
+        self.sprites = pygame.sprite.Group()
         self.loadBodiesFromMap()
         #self.create_world_bounds()
         
@@ -476,8 +479,9 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         self.starship = Starship(self) 
         self.initMap()
         #self.sprites = pygame.sprite.RenderPlain((self.starship))
-        self.sprites = pygame.sprite.Group((self.starship, self.starship.engine))
-
+        self.sprites.add(self.starship, self.starship.engine)
+    
+    
     def on_render(self):
         
         self.physics.surface.fill((0,0,0,0)) # alpha blending, boy!
@@ -496,9 +500,6 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
 
         self.viewport_surface.fill((0,0,0,0))
         self.viewport_surface.blit(self.physics.surface, (0,0), self.viewport)
-
-
-
         surfaces.append( (self.viewport_surface, self.viewport_surface.get_rect(), 5)) # 0 works fine over the bg, behind the planets
         self.wmap.layer.draw(self.screen, self.screen.get_rect(), surfaces)
 
@@ -591,6 +592,7 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
             # dinamic object test
             if obj.type and obj.type.lower() == "dynpoly":
                 print("dynpoly found: %s" % obj.name)
+       
                 center = (0,0)
                 rectsize = (0,0)
                 if not hasattr(obj,"points"):
@@ -717,7 +719,13 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
                     body = self.world.CreateStaticBody(position=self.physics.ToWorld(centroid),   
                             shapes=b2PolygonShape(vertices=xlate)) ## the vertice order is CCW
                 
+            if obj.image != None and obj.name.lower() != "starship":
+                "allocate the sprite, and update it when the object is updated"
+                body_s = SpritePhysics(self, obj.image, body)
+                self.sprites.add( body_s )
+                print("adding sprite")
 
+                
             self.bodies.append(body)
              
 

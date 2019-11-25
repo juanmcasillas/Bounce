@@ -50,7 +50,6 @@ def rotate_by_point( image, rect, angle, point=None):
 
 
 
-
 class SpriteAnim(pygame.sprite.Sprite):
     def __init__(self,parent):
         self.parent = parent
@@ -122,8 +121,25 @@ class SpriteAnim(pygame.sprite.Sprite):
 
 
 
+class SpritePhysics(pygame.sprite.Sprite):
+    def __init__(self, app, image, body):
+        pygame.sprite.Sprite.__init__(self)            
+        self.app = app
+        self.image_orig = image.copy()
+        self.image = self.image_orig
+        self.body = body
+        self.rect = self.image.get_rect()
 
+    def update(self):
+  
+        if not self.body.awake:
+            return
+        x, y = self.app.physics.ToPixels(self.body.transform.position)
+        angle = self.body.transform.angle
 
+        self.rect = self.image_orig.get_rect()
+        self.rect.center = (x,y)
+        self.image, self.rect = rotate_by_point( self.image_orig, self.rect, math.degrees(angle), (x,y))
 
 class EngineAnim(SpriteAnim):
     def __init__(self,parent):
