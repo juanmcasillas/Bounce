@@ -2,51 +2,9 @@ import pygame
 from Box2D import *
 import math
 
-def vecMod(v):
-    r = math.sqrt( math.pow(v[0],2) + math.pow(v[1],2))
-    return r
+import  bounce
 
 
-def rotate_by_point( image, rect, angle, point=None):
-    """rotate the image image in world pixel position rect, from the point point at angle angle(degrees)
-    rect is in world pixel coordinates
-    point is in world pixel coordinates (can be inside the rect, of course, to rotate from inside the rect)
-    angle is expressed in degrees (ccw)
-    
-    this method create a new surface centered in the desired point, copies the image an issues a perfect 
-    rotation.
-    """
-
-    point = point or rect.center
-
-    # create a new surface, centered in the point, including our new rectangle.
-    ix, iy = rect.center
-    px, py = point
-
-    szx = 2* (math.fabs(px - ix) + rect.width/2)
-    szy = 2* (math.fabs(py - iy) + rect.height/2)
-
-    # create the new image.
-    rot_rect = pygame.Rect( (0,0),(0,0) )
-    rot_rect.width = szx
-    rot_rect.height = szy
-    rot_rect.center = point
-
-    point_vector = ()
-
-    rot_image = pygame.Surface(rot_rect.size,  pygame.SRCALPHA| pygame.HWSURFACE )
-    rot_image.fill((0,0,0,0))
-    # copy the image to the right place in the new surface.
-
-    in_x = rect.x-rot_rect.x
-    in_y = rect.y-rot_rect.y
-
-
-    rot_image.blit( image,(in_x, in_y))
-    
-    rot_image_ret = pygame.transform.rotate(rot_image, angle)
-    rot_rect_ret = rot_image_ret.get_rect(center=rot_rect.center)
-    return rot_image_ret, rot_rect_ret
 
 
 
@@ -134,12 +92,12 @@ class SpritePhysics(pygame.sprite.Sprite):
   
         if not self.body.awake:
             return
-        x, y = self.app.physics.ToPixels(self.body.transform.position)
+        x, y = bounce.ToPixels(self.body.transform.position)
         angle = self.body.transform.angle
 
         self.rect = self.image_orig.get_rect()
         self.rect.center = (x,y)
-        self.image, self.rect = rotate_by_point( self.image_orig, self.rect, math.degrees(angle), (x,y))
+        self.image, self.rect = bounce.rotate_by_point( self.image_orig, self.rect, math.degrees(angle), (x,y))
 
 class EngineAnim(SpriteAnim):
     def __init__(self,parent):
@@ -196,7 +154,7 @@ class EngineAnim(SpriteAnim):
             # set the relative position from parent, from the CENTER.
             self.rect.midtop = b2Vec2(self.parent.rect.center) + self.pos
 
-        self.image, self.rect = rotate_by_point( frame, self.rect, math.degrees(angle), self.parent.rect.center)
+        self.image, self.rect = bounce.rotate_by_point( frame, self.rect, math.degrees(angle), self.parent.rect.center)
 
 
 class Starship(pygame.sprite.Sprite):
@@ -221,21 +179,16 @@ class Starship(pygame.sprite.Sprite):
 
     def update(self):
 
-        x, y = self.app.physics.ToPixels(self.body.transform.position)
+        x, y = bounce.ToPixels(self.body.transform.position)
         r = self.body.transform.angle
         
         # this will be used from the childs
-        self.image, self.rect = self.rot_center(self.orig_image, math.degrees(r))
+        self.image, self.rect = bounce.rotate_by_center(self.orig_image, math.degrees(r))
         self.rect.center = (x,y)
         self.angle = r
 
 
-    def rot_center(self, image, angle):
-        """rotate an image while keeping its center"""
-        rect = image.get_rect()
-        rot_image = pygame.transform.rotate(image, angle)
-        rot_rect = rot_image.get_rect(center=rect.center)
-        return rot_image,rot_rect
+
 
     def loadFromMap(self):
         try:
@@ -269,10 +222,10 @@ class Starship(pygame.sprite.Sprite):
         self.move_from_center((starship.x, starship.y))
 
         #define the Physics body    
-        wcenter = self.app.physics.ScaleToWorld( ( self.rect.width/2, self.rect.height/2 ))
+        wcenter = bounce.ScaleToWorld( ( self.rect.width/2, self.rect.height/2 ))
 
-        self.body = self.app.world.CreateDynamicBody(
-                position = self.app.physics.ToWorld(self.rect.center),
+        self.body = bounce.Physics.world.CreateDynamicBody(
+                position = bounce.ToWorld(self.rect.center),
                 #angle =math.pi/4.2,
                 angle = math.radians(-starship.rotation),
                 fixtures = b2FixtureDef(

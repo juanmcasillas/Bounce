@@ -13,6 +13,14 @@
             "args": [ "map01.tmx"]
         },
         {
+            "name": "Python: test_framework.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/test_framework.py",
+            "console": "integratedTerminal",
+            "args": [ "test_config.json"]
+        },        
+        {
             "name": "Python: Archivo actual",
             "type": "python",
             "request": "launch",
