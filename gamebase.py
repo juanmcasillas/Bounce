@@ -120,7 +120,22 @@ class pyGameApp:
         self.config.screen_center = (self.config.screen_witdh/2, self.config.screen_height/2)
         self.config.caption = caption
         self.config.fps = fps
-        
+        self.keypressed_time = {}
+
+    def get_keypressed_time(self, key):
+        return self.keypressed_time[key] 
+
+    def add_keypressed_time(self, key):
+        self.keypressed_time[key] = 0
+
+    def update_keypressed_time(self, key):
+        self.keypressed_time[key] += self.clock.get_time() #  * 10 # in msecs (frame) 1/1000 
+
+    def reset_keypressed_time(self, key):
+        self.keypressed_time[key] = 0
+
+    
+
     def on_init(self):
         pygame.init()
         pygame.font.init()
@@ -405,25 +420,38 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
             # debug the objects
 
         if pressed[pygame.K_q]:
-            self.starship.engine.timer += self.clock.get_time()
-            
-            impulse = self.starship.body.mass * 14 # 9.8 means don' climb, just anulate the gravity.
+            self.update_keypressed_time(pygame.K_q)
+            self.starship.engine.play()
+    
+            max_val = self.starship.body.mass * 50
+            # count the time we get the key pressed, in miliseconds.
+            impulse = min (max_val,  self.starship.body.mass * 100 * (self.get_keypressed_time(pygame.K_q) / 1000))
             angle =  self.starship.body.angle + math.pi/2
             y = math.sin(angle)*impulse
             x = math.cos(angle)*impulse
             self.starship.body.ApplyForce( (x,y), self.starship.body.worldCenter, wake=True )
         else:
-            self.starship.engine.timer = 0
+            self.reset_keypressed_time(pygame.K_q)
+            self.starship.engine.stop()
+            self.starship.engine.clear()
 
         if pressed[pygame.K_o]:
-            impulse = self.starship.body.mass * 14
+     
+            self.update_keypressed_time(pygame.K_o)
+            max_val = self.starship.body.mass * 20
+            impulse = min (max_val,  self.starship.body.mass * 100 * (self.get_keypressed_time(pygame.K_o) / 1000))
             self.starship.body.ApplyTorque(impulse, wake=True)
+        else:
+            self.reset_keypressed_time(pygame.K_o)
 
         if pressed[pygame.K_p]:
-            impulse = self.starship.body.mass * 14
+            self.update_keypressed_time(pygame.K_p)
+            max_val = self.starship.body.mass * 20
+            impulse = min (max_val,  self.starship.body.mass * 100 * (self.get_keypressed_time(pygame.K_p) / 1000))
             self.starship.body.ApplyTorque(-impulse, wake=True)
             ##self.starship.body.ApplyAngularImpulse(impulse=-impulse, wake=True)
-
+        else:
+            self.reset_keypressed_time(pygame.K_p)
   
   
 
@@ -437,6 +465,10 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         self.physics = Physics(self.config, self.wmap.world_size)
         self.world = b2World(gravity = self.physics.gravity, doSleep=self.physics.doSleep)       
         self.physics.debug()
+
+        self.add_keypressed_time(pygame.K_q)
+        self.add_keypressed_time(pygame.K_o)
+        self.add_keypressed_time(pygame.K_p)
 
         self.loadBodiesFromMap()
         #self.create_world_bounds()

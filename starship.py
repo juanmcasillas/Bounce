@@ -50,6 +50,7 @@ def rotate_by_point( image, rect, angle, point=None):
 
 
 
+
 class SpriteAnim(pygame.sprite.Sprite):
     def __init__(self,parent):
         self.parent = parent
@@ -71,9 +72,13 @@ class SpriteAnim(pygame.sprite.Sprite):
         self.pos = pos
 
         self.rect = self.frames[0][0].get_rect()
-        self.empty = pygame.Surface(self.rect.size,  pygame.SRCALPHA| pygame.HWSURFACE )
+        self.empty = pygame.Surface((1,1),  pygame.SRCALPHA| pygame.HWSURFACE )
         self.empty.fill((0,0,0,0))
         self.image = self.frames[0][0]
+
+        self.stop()  # animation stopped
+        self.clear() # image empty
+
 
     def play(self):
         self._state = "play"
@@ -81,8 +86,9 @@ class SpriteAnim(pygame.sprite.Sprite):
     def stop(self):
         self._state = "stop"
 
-    def empty(self):
+    def clear(self):
         self.image = self.empty
+        self.rect = self.empty.get_rect()
         self.index = 0 # reset cycle animation
         self.timestamp = 0
 
@@ -112,6 +118,53 @@ class SpriteAnim(pygame.sprite.Sprite):
 
 
         self.rect = frame.get_rect()
+
+
+
+
+
+
+
+class EngineAnim(SpriteAnim):
+    def __init__(self,parent):
+        super().__init__(parent)
+
+    def update(self):
+        
+        if self._state == "stop":
+            return
+        
+        if len(self.frames) == 0:
+            raise ValueError("Sprite has no frames. Bailing out")
+
+        time_delta = self.parent.app.clock.get_time()
+        frame, duration = self.frames[self.index]
+
+        if (self.timestamp + time_delta)  > duration:
+            # move to other frame.
+            self.timestamp = 0
+        
+            elapsed = self.parent.app.get_keypressed_time(pygame.K_q) / 1000 
+      
+            if elapsed >= 0 and elapsed <= 1.0:
+                max_frames = 2
+            if elapsed > 1.0 and elapsed <= 2.0:
+                max_frames = 4
+            if elapsed > 2.0:
+                max_frames = len(self.frames)-1
+
+            self.index += 1
+            if self.index > max_frames:
+                self.index = 0
+
+
+
+
+        else:
+            self.timestamp += time_delta    
+
+
+        self.rect = frame.get_rect()
         #
         # do the required transformations    
         #
@@ -129,62 +182,12 @@ class SpriteAnim(pygame.sprite.Sprite):
 
         self.image, self.rect = rotate_by_point( frame, self.rect, math.degrees(angle), self.parent.rect.center)
 
-class StarshipEngine(pygame.sprite.Sprite):
-    def __init__(self,app):
-        self.app = app
-        pygame.sprite.Sprite.__init__(self)    
-        
-        self.images = []
-        self.duration = 0
-        self.index = 0
-        self.stamp = 0
-        self.timer = 0
-
-
-    def update_local(self):
-        time_delta = self.app.clock.get_time()
-
-        if (self.stamp + time_delta)  > self.duration:
-        
-            if self.timer == 0:
-                self.index = 0
-                self.stamp = 0
-                self.image = self.images[self.index].copy()
-
-            else:
-                
-                secs = self.timer / 1000
-                max_images = 0
-
-                if secs > 0.0 and secs < 1.5:
-                    max_images = 2
-                if secs >= 1.5 and secs < 2.0:
-                    max_images = 4
-                if secs >= 2.0:
-                    max_images = len(self.images)-1
-
-                #del self.image
-                self.image = self.images[self.index].copy()
-                self.stamp = 0
-
-                if self.index > max_images or self.index == len(self.images)-1:
-                    self.index = 1
-                else:
-                    self.index += 1
-
-
-        else:
-            self.stamp += time_delta
-        
-    def update(self):
-        pass
 
 class Starship(pygame.sprite.Sprite):
     def __init__(self, app):
         self.app = app
-        self.engine = SpriteAnim(self)
+        self.engine = EngineAnim(self)
         self.angle = 0 # radians
-
 
         pygame.sprite.Sprite.__init__(self)
         
