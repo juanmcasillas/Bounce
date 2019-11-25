@@ -6,6 +6,129 @@ def vecMod(v):
     r = math.sqrt( math.pow(v[0],2) + math.pow(v[1],2))
     return r
 
+
+def rotate_by_point( image, rect, angle, point=None):
+    """rotate the image image in world pixel position rect, from the point point at angle angle(degrees)
+    rect is in world pixel coordinates
+    point is in world pixel coordinates (can be inside the rect, of course, to rotate from inside the rect)
+    angle is expressed in degrees (ccw)
+    
+    this method create a new surface centered in the desired point, copies the image an issues a perfect 
+    rotation.
+    """
+
+    point = point or rect.center
+
+    # create a new surface, centered in the point, including our new rectangle.
+    ix, iy = rect.center
+    px, py = point
+
+    szx = 2* (math.fabs(px - ix) + rect.width/2)
+    szy = 2* (math.fabs(py - iy) + rect.height/2)
+
+    # create the new image.
+    rot_rect = pygame.Rect( (0,0),(0,0) )
+    rot_rect.width = szx
+    rot_rect.height = szy
+    rot_rect.center = point
+
+    point_vector = ()
+
+    rot_image = pygame.Surface(rot_rect.size,  pygame.SRCALPHA| pygame.HWSURFACE )
+    rot_image.fill((0,0,0,0))
+    # copy the image to the right place in the new surface.
+
+    in_x = rect.x-rot_rect.x
+    in_y = rect.y-rot_rect.y
+
+
+    rot_image.blit( image,(in_x, in_y))
+    
+    rot_image_ret = pygame.transform.rotate(rot_image, angle)
+    rot_rect_ret = rot_image_ret.get_rect(center=rot_rect.center)
+    return rot_image_ret, rot_rect_ret
+
+
+
+class SpriteAnim(pygame.sprite.Sprite):
+    def __init__(self,parent):
+        self.parent = parent
+        pygame.sprite.Sprite.__init__(self)   
+        # frames have (image, ms_duration)
+        self.frames = []
+        self.index = 0
+        self.timestamp = 0
+        self.index = 0
+        self._state = "play"
+        self.image = None
+        self.pos = None
+
+    def init(self, pos=None):
+
+        if len(self.frames) == 0:
+            raise ValueError("Sprite has no frames. Bailing out")
+        
+        self.pos = pos
+
+        self.rect = self.frames[0][0].get_rect()
+        self.empty = pygame.Surface(self.rect.size,  pygame.SRCALPHA| pygame.HWSURFACE )
+        self.empty.fill((0,0,0,0))
+        self.image = self.frames[0][0]
+
+    def play(self):
+        self._state = "play"
+    
+    def stop(self):
+        self._state = "stop"
+
+    def empty(self):
+        self.image = self.empty
+        self.index = 0 # reset cycle animation
+        self.timestamp = 0
+
+    def addFrame(self, image, duration):
+        self.frames.append( (image, duration) )
+        self.rect = image.get_rect()
+
+    def update(self):
+        
+        if self._state == "stop":
+            return
+        
+        if len(self.frames) == 0:
+            raise ValueError("Sprite has no frames. Bailing out")
+
+        time_delta = self.parent.app.clock.get_time()
+        frame, duration = self.frames[self.index]
+
+        if (self.timestamp + time_delta)  > duration:
+            # move to other frame.
+            self.timestamp = 0
+            self.index += 1
+            if self.index > len(self.frames)-1:
+                self.index = 0
+        else:
+            self.timestamp += time_delta    
+
+
+        self.rect = frame.get_rect()
+        #
+        # do the required transformations    
+        #
+        # 1 get physics info
+        # 2 position the sprite in world pixels coords relative to its parent (if any)
+        # 3 rotate
+        #
+
+        angle = self.parent.angle
+
+        if self.pos:
+            # harcoded, must be configured outside.
+            # set the relative position from parent, from the CENTER.
+            self.rect.midtop = b2Vec2(self.parent.rect.center) + self.pos
+
+        self.image, self.rect = rotate_by_point( frame, self.rect, math.degrees(angle), self.parent.rect.center)
+
 class StarshipEngine(pygame.sprite.Sprite):
     def __init__(self,app):
         self.app = app
@@ -16,6 +139,7 @@ class StarshipEngine(pygame.sprite.Sprite):
         self.index = 0
         self.stamp = 0
         self.timer = 0
+
 
     def update_local(self):
         time_delta = self.app.clock.get_time()
@@ -58,9 +182,14 @@ class StarshipEngine(pygame.sprite.Sprite):
 class Starship(pygame.sprite.Sprite):
     def __init__(self, app):
         self.app = app
+        self.engine = SpriteAnim(self)
+        self.angle = 0 # radians
+
+
         pygame.sprite.Sprite.__init__(self)
         
         self.loadFromMap()
+        self.engine.init((0,40)) ## TODO, relative position to the CENTER of the image
 
         #define the Physics body
 
@@ -73,27 +202,16 @@ class Starship(pygame.sprite.Sprite):
 
     def update(self):
 
-        myrect = self.orig_image.get_rect()
-        enginerect = self.engine.image.get_rect()
-
-        offset = enginerect.height
-        
-        self.image_tmp = pygame.Surface( ( myrect.width, myrect.height+enginerect.height+offset), pygame.SRCALPHA| pygame.HWSURFACE )
-        self.topleft = myrect.topleft
-
-        self.image_tmp.blit( self.orig_image, (0, offset))
-        pos = b2Vec2(myrect.midbottom) - b2Vec2(enginerect.width/2,0 ) + b2Vec2(0, offset)
-        self.image_tmp.blit( self.engine.image, pos, enginerect )
-
-        #print(self.body.linearVelocity, self.body.angularVelocity, self.body.linearVelocity.length)
         x, y = self.app.physics.ToPixels(self.body.transform.position)
         r = self.body.transform.angle
-        self.image, self.rect = self.rot_center(self.image_tmp, math.degrees(r))
-   
-        self.rect.center = (x,y)
-        self.engine.update_local()
         
-    def rot_center(self,image, angle):
+        # this will be used from the childs
+        self.image, self.rect = self.rot_center(self.orig_image, math.degrees(r))
+        self.rect.center = (x,y)
+        self.angle = r
+
+
+    def rot_center(self, image, angle):
         """rotate an image while keeping its center"""
         rect = image.get_rect()
         rot_image = pygame.transform.rotate(image, angle)
@@ -107,28 +225,15 @@ class Starship(pygame.sprite.Sprite):
             print("Can't find objects layer in the map. Ignoring them")
             return
 
-        self.engine = StarshipEngine(self.app)
-        
         # load animations
-
 
         for gid, props in self.app.wmap.tmx.tile_properties.items():
             if 'parent' in props.keys() and props['parent'].lower() == "starship":
                 for animation_frame in props['frames']:
                     image = self.app.wmap.tmx.get_tile_image_by_gid(gid)
                     
-                    self.engine.images.append(image.copy())
-                    self.engine.duration = animation_frame.duration 
-                    self.engine.rect = image.get_rect()
+                    self.engine.addFrame(image.copy(), animation_frame.duration)                    
                     print("adding animation frame %d" % gid)
-
-   
-        empty = pygame.Surface(self.engine.images[0].get_rect().size, pygame.SRCALPHA| pygame.HWSURFACE )
-        empty.fill((0,0,0,0)) # RGBALPHA
-        self.engine.images = [ empty ] + self.engine.images
-        self.engine.image = self.engine.images[0].copy()
-        self.index = 0
-
 
 
         group = self.app.wmap.tmx.get_layer_by_name("objects")
@@ -146,7 +251,6 @@ class Starship(pygame.sprite.Sprite):
 
         #define the Physics body    
         wcenter = self.app.physics.ScaleToWorld( ( self.rect.width/2, self.rect.height/2 ))
-
 
         self.body = self.app.world.CreateDynamicBody(
                 position = self.app.physics.ToWorld(self.rect.center),

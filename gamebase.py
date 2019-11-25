@@ -445,7 +445,7 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         self.starship = Starship(self) 
         self.initMap()
         #self.sprites = pygame.sprite.RenderPlain((self.starship))
-        self.sprites = pygame.sprite.Group((self.starship))
+        self.sprites = pygame.sprite.Group((self.starship, self.starship.engine))
 
     def on_render(self):
         
@@ -458,8 +458,8 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         self.sprites.draw(self.physics.surface)
 
         # for debbuging sprite rects
-        # pygame.draw.rect(self.physics.surface,(255,255,255),self.starship.rect,1)   
-
+        # pygame.draw.rect(self.physics.surface, (255,255,255),self.starship.rect,1)   
+        pygame.draw.rect(self.physics.surface,(255,255,255),self.starship.engine.rect,1) 
         # hack to use the plain render.
         surfaces = list()
 

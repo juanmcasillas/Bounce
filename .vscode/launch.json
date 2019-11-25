@@ -13,7 +13,7 @@
             "args": [ "map01.tmx"]
         },
         {
-            "name": "Python: Archivo actual (map01.tmx)",
+            "name": "Python: Archivo actual",
             "type": "python",
             "request": "launch",
             "program": "${file}",
