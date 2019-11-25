@@ -282,7 +282,6 @@ class pyGameAppPhysics(pyGameApp):
       
             if isinstance(shape, b2ChainShape):
                 vertices = [zoom(self.physics.ToPixels(body.transform * v)) for v in shape.vertices]
-                vertices = vertices[:-1]
                 if not wireFrame:  
                     pygame.draw.lines(surface, color, False, vertices)
                 else:
@@ -513,13 +512,16 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         
         b = pygame.mouse.get_pressed()
         
-        # TODO, fix the visualizer.
+        
         pos = self.starship.rect.center
         if b[0]:
-            i,j = (0,0)
+            # scale the window coordinates to all the world, so when pressing the button
+            # and panning with the mouse, you can check all the window.
             x,y = pygame.mouse.get_pos()
-            pos = ( i+x, j+y)
-       
+            wx,wy = self.physics.worldPixelSize()
+            pos = ( x * wx / self.viewport.width,
+                    y * wy / self.viewport.height)
+      
         self.wmap.layer.center(pos)
         self.viewport.center = pos
 
@@ -553,18 +555,19 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
                 #  <object id="30" name="object5" type="wallline" x="448" y="320">
                 # <polyline points="0,0 -128,64 -256,0 -256,64 -384,64"/>
                 # </object>
-                orig = (0, 0)
+                orig = (0,0)
+     
                 # now, translate all the points to the 0,0:
                 xlate = []
                 for p in obj.points:
                     px,py = self.physics.ToWorld(b2Vec2(p) + orig)
                     xlate.append((px,py)) 
-                
+   
                 for p in xlate:
                     print(p,len(xlate))
-
-                body = self.world.CreateStaticBody(shapes=b2ChainShape(vertices=xlate)) ## the vertice order is CCW
-
+      
+                body = self.world.CreateStaticBody(shapes=b2ChainShape(vertices_chain=xlate)) ## the vertice order is CCW
+         
 
 
             if obj.type and obj.type.lower() == "wallcircle":
