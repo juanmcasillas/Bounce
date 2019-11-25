@@ -289,10 +289,9 @@ class pyGameAppPhysics(pyGameApp):
 
 
             elif isinstance(shape, b2CircleShape):
-                
                 ## todo, circle here
                 if not wireFrame:
-                    center = zoom(self.physics.ToPixels(shape.pos))
+                    center = zoom(self.physics.ToPixels(body.position))
                     radius, _ = self.physics.ScaleToPixels((shape.radius,0))
 
                     pygame.draw.circle(surface, color, int_tuple(center), int(radius*self.zoom))
@@ -300,6 +299,7 @@ class pyGameAppPhysics(pyGameApp):
                     pygame.draw.circle(surface, color, int_tuple(center), int(radius*self.zoom), 1)
 
             else:
+                #polygon here.
                 vertices = [zoom(self.physics.ToPixels(body.transform * v)) for v in shape.vertices]
                 if not wireFrame:
                     pygame.draw.polygon(surface, color, vertices)
@@ -490,7 +490,7 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
 
         # for debbuging sprite rects
         # pygame.draw.rect(self.physics.surface, (255,255,255),self.starship.rect,1)   
-        pygame.draw.rect(self.physics.surface,(255,255,255),self.starship.engine.rect,1) 
+        #pygame.draw.rect(self.physics.surface,(255,255,255),self.starship.engine.rect,1) 
         # hack to use the plain render.
         surfaces = list()
 
@@ -536,6 +536,9 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
         if self.viewport.right >  self.physics.worldPixelSize()[0]:
             self.viewport.right = self.physics.worldPixelSize()[0]
 
+
+
+
     def loadBodiesFromMap(self):
         self.bodies = [] 
         try:
@@ -568,8 +571,6 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
       
                 body = self.world.CreateStaticBody(shapes=b2ChainShape(vertices_chain=xlate)) ## the vertice order is CCW
          
-
-
             if obj.type and obj.type.lower() == "wallcircle":
                 print("wallcircle found: %s" % obj.name)
                 center = (0,0)
@@ -583,13 +584,13 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
                 radius, _ = self.physics.ScaleToWorld((radius,0))
 
                 body = self.world.CreateStaticBody(
-                        #position=self.physics.ToWorld(center),   
-                        shapes=b2CircleShape(pos=self.physics.ToWorld(center), radius=radius)
+                        position=self.physics.ToWorld(center),   
+                        shapes=b2CircleShape(radius=radius)
                         )
 
             # dinamic object test
-            if obj.type and obj.type.lower() == "test":
-                print("test found: %s" % obj.name)
+            if obj.type and obj.type.lower() == "dynpoly":
+                print("dynpoly found: %s" % obj.name)
                 center = (0,0)
                 rectsize = (0,0)
                 if not hasattr(obj,"points"):
@@ -609,8 +610,69 @@ class pyGameAppPhysicsMap(pyGameAppPhysics):
                                 density = obj.properties['density'],
                                 friction = obj.properties['friction'],
                                 restitution = obj.properties['restitution']
-                            ))            
+                            ))     
+                else:
+                    # vertice chain so calculate the centroid.
+                    # create a static body here
+                    # first, get the points and calculate the center of the polygon.
+                    # calculate the centroid.
+                    x = [p[0] for p in obj.points]
+                    y = [p[1] for p in obj.points]
+                    centroid = (sum(x) / len(obj.points), sum(y) / len(obj.points))
+                    
+                    # now, translate all the points to the 0,0:
+                    xlate = []
+                    centroid = b2Vec2(centroid)
+                    for p in obj.points:
+                        # centroid is measure from (0.0) was is upper left,
+                        # in the world coords, start in bottom left, so just
+                        # swap the points y coord (flipping around axis 0)
+                        px,py = self.physics.ScaleToWorld(b2Vec2(p) - centroid)
+                        xlate.append( (px,-py)  )
+                    
+                    for p in obj.points:
+                        print(p, centroid)
+                    
+                    for p in xlate:
+                        print(p)
+                    
+    
+                    body = self.world.CreateDynamicBody(
+                            position = self.physics.ToWorld(centroid),
+                            angle = 0,
+                            fixtures = b2FixtureDef(
+                                shape = b2PolygonShape(vertices=xlate),
+                                density = obj.properties['density'],
+                                friction = obj.properties['friction'],
+                                restitution = obj.properties['restitution']
+                            )) 
+
+                                  
+            if obj.type and obj.type.lower() == "dyncircle":
+                print("dyncircle found: %s" % obj.name)
+                center = (0,0)
+                rectsize = (0,0)
                 
+                # its a circle, calculate center and radious
+                #b2CircleShape(pos=(1, 2), radius=0.5)
+                center =  ( obj.x + (obj.width/2), obj.y + (obj.height / 2))
+                radius = max(obj.width/2, obj.height/2)
+                print(center, radius)
+                for p in obj.properties.keys():
+                    print("%s: %s" % (p, obj.properties[p]))
+                radius, _ = self.physics.ScaleToWorld((radius,0))
+
+                body = self.world.CreateDynamicBody(
+                        position=self.physics.ToWorld(center),
+                        angle=0,
+                        fixtures = b2FixtureDef(
+                            shape = b2CircleShape(radius=radius),
+                            density = obj.properties['density'],
+                            friction = obj.properties['friction'],
+                            restitution = obj.properties['restitution']
+                        ))                     
+                print(body)
+
             if obj.type and obj.type.lower() == "wall":
                 print("wall found: %s" % obj.name)
                 center = (0,0)
