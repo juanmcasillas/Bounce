@@ -3,6 +3,42 @@ import bounce
 import pygame
 from Box2D import *
 
+
+
+class ContactListener(b2ContactListener):
+    def __init__(self):
+        b2ContactListener.__init__(self)
+    def BeginContact(self, contact):
+        
+        if contact.fixtureA.userData:
+            print("A is the Starship")
+        
+        if contact.fixtureB.userData:
+            print("Collision fixture B is the Starship")
+
+    def EndContact(self, contact):
+        pass
+        #print("endContact")
+    def PreSolve(self, contact, oldManifold):
+        pass
+    def PostSolve(self, contact, impulse):
+        pass
+
+class ContactFilter(b2ContactFilter):
+    def __init__(self):
+        b2ContactFilter.__init__(self)
+
+    def ShouldCollide(self, shape1, shape2):
+        # Implements the default behavior of b2ContactFilter in Python
+        filter1 = shape1.filterData
+        filter2 = shape2.filterData
+        if filter1.groupIndex == filter2.groupIndex and filter1.groupIndex != 0:
+            return filter1.groupIndex > 0
+ 
+        collides = (filter1.maskBits & filter2.categoryBits) != 0 and (filter1.categoryBits & filter2.maskBits) != 0
+        return collides
+
+
 def do_step():
     bounce.Physics.world.Step(bounce.Physics.step, bounce.Physics.velocityIT, bounce.Physics.positionIT)
 
@@ -67,8 +103,13 @@ def init_physics():
     bounce.Physics.step = 1 / bounce.App.fps
     bounce.Physics.world_rect = bounce.FRect(0,0,0,0) # world physics size
     bounce.Physics.pixel_rect = pygame.Rect(0,0,0,0)  # world pixel size.
-    bounce.Physics.world = b2World(gravity = bounce.Physics.gravity, doSleep=True)   
+    bounce.Physics.world = b2World(gravity = bounce.Physics.gravity, 
+                                  doSleep=True,
+                                  contactListener=ContactListener(),
+                                  ContactFilter = ContactFilter())
     
+
+
     bounce.Physics.do_step = do_step
     bounce.Physics.clear_surface = clear_surface
     bounce.Physics.draw_body = draw_body

@@ -208,7 +208,10 @@ class pyGameAppMap(pyGameAppPhysics):
                     print(p,len(xlate))
       
                 body = bounce.Physics.world.CreateStaticBody(shapes=b2ChainShape(vertices_chain=xlate)) ## the vertice order is CCW
-         
+                #body.fixtures[0].filterData.categoryBits=4
+                #body.fixtures[0].filterData.maskBits=0
+                #body.fixtures[0].filterData.groupIndex=0
+                
             if obj.type and obj.type.lower() == "wallcircle":
                 print("wallcircle found: %s" % obj.name)
                 center = (0,0)

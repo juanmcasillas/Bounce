@@ -41,14 +41,36 @@ class Starship(bounce.SpriteComposite):
         # load startship info from here.
         self.add_frame( starship.image )
         rect = starship.image.get_rect()
+        rect.topleft = (starship.x, starship.y)
 
         #define the Physics body    
         wcenter = bounce.ScaleToWorld( ( rect.width/2, rect.height/2 ))
 
         self.body = bounce.Physics.world.CreateDynamicBody(
-                position = bounce.ToWorld(rect.center),
+                position = bounce.ToWorld((rect.center)),
                 angle = math.radians(-starship.rotation),
                 fixtures = b2FixtureDef(
+                    # collision information
+                    # local filterData = {
+                    # categoryBits = player,
+                    # maskBits = wall + nme + platform,
+                    # groupIndex = 0
+                    # }
+                    # fixture:setFilterData(filterData)
+                    # player, wall, nme, ... are integers variables (must be power of 2 numbers):
+                    # player = 1
+                    # wall = 2
+                    # nme = 4
+                    # ... = 16, 32, 64, 128, 256, ...
+                    # categoryBits = main object you want to test collisions on
+
+                    # maskBits = you add (with +) all the numbers the main object can collide with.
+                    # player = 2
+                    # static = 4
+                    # balls = 8
+                    # boxes = 16
+                    #categoryBits=2, maskBits=4+8+16, groupIndex=0,
+                    userData=self,
                     shape = b2PolygonShape(box= wcenter),
                     density = starship.properties['density'],
                     friction = starship.properties['friction'],
