@@ -5,15 +5,15 @@ import pyscroll
 from pytmx.util_pygame import load_pygame
 from . gameapp_base import pyGameApp
 from . gameapp_physics import pyGameAppPhysics
-from . starship import *
+import math
+
 
 class pyGameAppMap(pyGameAppPhysics):
     def __init__(self, mapfile):
         super().__init__()
         self.wmap = bounce.WorldMap(mapfile)
         self.objects = []
-        self.bodies = [] 
-
+        
     def loadMap(self):
         self.wmap.tmx = load_pygame(self.wmap.fname)
 
@@ -101,8 +101,8 @@ class pyGameAppMap(pyGameAppPhysics):
             self.reset_keypressed_time(pygame.K_p)
   
 
-    def on_init(self):
-        pyGameApp.on_init(self)
+    def init(self):
+        pyGameApp.init(self)
         self.loadMap()
        
         self.add_keypressed_time(pygame.K_q)
@@ -111,9 +111,9 @@ class pyGameAppMap(pyGameAppPhysics):
         
         self.loadBodiesFromMap()
         
-        self.starship = Starship(self) 
         self.initMap()
-        self.sprites.add(self.starship, self.starship.engine)
+        #self.starship = None
+        #self.sprites.add(self.starship, self.starship.engine)
     
   
     def on_render(self):
@@ -128,7 +128,8 @@ class pyGameAppMap(pyGameAppPhysics):
         bounce.Physics.draw_body(self.starship.body, wireFrame=True)
 
         self.sprites.draw(bounce.Physics.surface)
-
+        self.starship.draw(bounce.Physics.surface)
+        
         # for debbuging sprite rects
         # pygame.draw.rect(self.physics.surface, (255,255,255),self.starship.rect,1)   
         #pygame.draw.rect(self.physics.surface,(255,255,255),self.starship.engine.rect,1) 
@@ -172,7 +173,6 @@ class pyGameAppMap(pyGameAppPhysics):
             self.viewport.rect.left = 0
         if self.viewport.rect.right >  bounce.Physics.pixel_rect.width:
             self.viewport.rect.right = bounce.Physics.pixel_rect.width
-
 
 
 
@@ -358,7 +358,8 @@ class pyGameAppMap(pyGameAppPhysics):
                 
             if obj.image != None and obj.name.lower() != "starship":
                 "allocate the sprite, and update it when the object is updated"
-                body_s = SpritePhysics(self, obj.image, body)
+                body_s = bounce.SpritePhysics(self.clock, body)
+                body_s.add_frame(obj.image)
                 self.sprites.add( body_s )
                 print("adding sprite")
                 

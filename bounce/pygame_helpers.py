@@ -1,6 +1,6 @@
 import pygame
 import math
-
+import bounce
 
 def render_text(surface, text, pos, size=24, color=(255,255,255), font_family=None):
     """
@@ -45,8 +45,8 @@ def rotate_by_point( image, rect, angle, point=None):
 
     point_vector = ()
 
-    rot_image = pygame.Surface(rot_rect.size,  pygame.SRCALPHA| pygame.HWSURFACE )
-    rot_image.fill((0,0,0,0))
+    rot_image = pygame.Surface(rot_rect.size,  bounce.Screen.surface_flags_alpha)
+    rot_image.fill(bounce.Colors.black) # need to be alpha
     # copy the image to the right place in the new surface.
 
     in_x = rect.x-rot_rect.x
@@ -58,3 +58,24 @@ def rotate_by_point( image, rect, angle, point=None):
     rot_image_ret = pygame.transform.rotate(rot_image, angle)
     rot_rect_ret = rot_image_ret.get_rect(center=rot_rect.center)
     return rot_image_ret, rot_rect_ret
+
+def load_spritesheet(fname, sprite_sz):
+    """load a group of images stored in a sprite sheet"""
+    images = []
+    sheet = pygame.image.load(fname)
+    
+    width, height = sprite_sz
+
+    iw, ih = sheet.get_rect().size
+    cols = int(iw / width)
+    rows = int(ih / height)
+
+    for j in range(rows):
+        for i in range(cols):
+            #print("reading",i,j)
+            rect = pygame.Rect( (i*width, j*height), sprite_sz )
+            img_ret = pygame.Surface( sprite_sz , bounce.Screen.surface_flags_alpha )
+            img_ret.blit( sheet, (0,0), rect)
+            images.append(img_ret)
+    return(images)
+

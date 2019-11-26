@@ -18,7 +18,9 @@ from . gameapp_map import *
 
 from . maps import *
 from . frect import FRect
-from . starship import *
+from . sprite_base import *
+from . sprite_physics import *
+from . sprite_composite import *
 
 # remap some global objects.
       

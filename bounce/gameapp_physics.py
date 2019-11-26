@@ -7,9 +7,11 @@ from . gameapp_base import pyGameApp
 class pyGameAppPhysics(pyGameApp):
     def __init__(self):
         super().__init__()
+        # maybe that's removed.
+        self.bodies = [] 
 
-    def on_init(self):
-        super().on_init()
+    def init(self):
+        super().init()
         # create a simple walls to get something to see.
         self.create_world_bounds() 
 
@@ -20,22 +22,21 @@ class pyGameAppPhysics(pyGameApp):
         for wall in self.walls:
             bounce.Physics.draw_body(wall)
 
-        
+        for body in self.bodies:
+            bounce.Physics.draw_body(body)
+
         ##self.viewport.surface.fill(bounce.Colors.viewport_bg)
         #self.viewport.surface.blit(bounce.Physics.surface, (0,0), self.viewport.rect)
         #self.screen.blit(self.viewport.surface, (0,0))
+        
+        self.sprites.draw(bounce.Physics.surface)
+        self.sprite_dict["composite"].draw(bounce.Physics.surface)
         
         # copying to viewport is not needed.
         ##self.viewport.surface.blit(bounce.Physics.surface, (0,0), self.viewport.rect)
         self.screen.blit(bounce.Physics.surface, (0,0), self.viewport.rect)
         bounce.Physics.annotate(self.screen, fps=self.clock.get_fps())
        
- 
- 
- 
-
-
-
     def on_event(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE): 

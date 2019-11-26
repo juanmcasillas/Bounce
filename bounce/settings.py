@@ -123,7 +123,7 @@ def load_config(fname, init=True):
     Colors.Physics.dbody_bg = (100,255,100)
     Colors.Physics.sbody_bg = (100,100,100)
     Colors.viewport_bg = (20,60,20)
-    Colors.black_bga = (0,0,0,0)
+    Colors.black = (0,0,0,0)
 
     # #########################################################################
     # 

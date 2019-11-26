@@ -14,6 +14,8 @@ class pyGameApp:
         self._zoom=1
         self.keypressed_time = {}
         self.sprites = None
+        self.sprite_dict = {}
+        
 
     def get_keypressed_time(self, key):
         return self.keypressed_time[key] 
@@ -27,7 +29,7 @@ class pyGameApp:
     def reset_keypressed_time(self, key):
         self.keypressed_time[key] = 0
 
-    def on_init(self):
+    def init(self):
         pygame.init()
         pygame.font.init()
         pygame.mouse.set_visible(bounce.Screen.visibleMouse)
@@ -49,6 +51,7 @@ class pyGameApp:
                 return
             
     def on_loop(self):
+        self.sprites.update()
         b = pygame.mouse.get_pressed()
         pos = bounce.Screen.rect.center
         if b[0]:
@@ -58,8 +61,7 @@ class pyGameApp:
             wx,wy = bounce.Physics.pixel_rect.size
             pos = ( x * wx / self.viewport.rect.width,
                     y * wy / self.viewport.rect.height)
-      
-        
+              
         self.viewport.rect.center = pos
 
         # do some clip for intelligent camera here.
@@ -76,6 +78,7 @@ class pyGameApp:
 
     def on_render(self):
         self.viewport.surface.fill(bounce.Colors.viewport_bg)
+        self.sprites.draw(self.viewport.surface)
         self.screen.blit(self.viewport.surface,self.screen.get_rect())
 
 
@@ -88,7 +91,6 @@ class pyGameApp:
         #self.clock.tick(30)
 
     def on_execute(self):
-        self.on_init()
      
         while( self._running ):
 
