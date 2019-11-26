@@ -34,6 +34,7 @@ class pyGameApp:
         pygame.display.set_caption(bounce.App.title)
         self.clock = pygame.time.Clock()
         self.screen = pygame.display.set_mode(bounce.Screen.rect.size, bounce.Screen.surface_flags)
+        #self.screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)
         
         self.viewport.rect = pygame.Rect((0,0),bounce.Screen.rect.size)
         self.viewport.surface = pygame.Surface(self.viewport.rect.size, bounce.Screen.surface_flags) 
@@ -74,7 +75,7 @@ class pyGameApp:
 
 
     def on_render(self):
-        self.viewport.surface.fill((0,0,0,0))
+        self.viewport.surface.fill(bounce.Colors.viewport_bg)
         self.screen.blit(self.viewport.surface,self.screen.get_rect())
 
 
@@ -82,7 +83,9 @@ class pyGameApp:
         pygame.quit()
 
     def on_step(self):
-        self.clock.tick(bounce.App.fps)
+        self.clock.tick_busy_loop(bounce.App.fps)
+        #self.clock.tick(bounce.App.fps)
+        #self.clock.tick(30)
 
     def on_execute(self):
         self.on_init()
@@ -97,6 +100,7 @@ class pyGameApp:
             self.on_render()
             self.on_step()
 
-            pygame.display.flip()
+            pygame.display.update()
+       
 
         self.on_cleanup()

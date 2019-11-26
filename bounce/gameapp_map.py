@@ -16,31 +16,31 @@ class pyGameAppMap(pyGameAppPhysics):
 
     def loadMap(self):
         self.wmap.tmx = load_pygame(self.wmap.fname)
-    
-        # Make data source for the map
-        self.wmap.data = pyscroll.TiledMapData(self.wmap.tmx)
 
-        # Make the scrolling layer
-        self.wmap.layer = pyscroll.BufferedRenderer(self.wmap.data, bounce.Screen.rect.size, alpha=False, clamp_camera=True)
-    
         # here, we know the space of our world, so store it in the class
         # used after that to init the Physics engine.
         w = self.wmap.tmx.width * self.wmap.tmx.tilewidth
         h = self.wmap.tmx.height * self.wmap.tmx.tileheight
         bounce.update_world_size((w, h))
+
+        # Make data source for the map
+        self.wmap.data = pyscroll.TiledMapData(self.wmap.tmx)
+
+        # Make the scrolling layer
+        # with screen_rect_size, creates a buffer for the screen, 
+        # but we need a full world buffer (to allow blitting the physics layer when needed)
+        #self.wmap.layer = pyscroll.BufferedRenderer(self.wmap.data, bounce.Screen.rect.size, alpha=False, clamp_camera=True)
+        self.wmap.layer = pyscroll.BufferedRenderer(self.wmap.data, bounce.Physics.pixel_rect.size, alpha=False, clamp_camera=True)
                 
 
     def Zoom(self, value):
         "for now, I don't know how to implement that on the Physics layer"
         pass
-        #self.zoom += value
-        #w,h = self.wmap.world_size
-        #self.wmap.layer.zoom = self.zoom
-        #self.physics.surface = pygame.transform.scale(self.physics.surface, ( int(w*self.zoom), int(h*self.zoom)))
-        #self.wmap.world_size = (w*self.zoom, h*self.zoom)
         
 
     def initMap(self):
+        "do nothing here"
+        pass
         # make the pygame SpriteGroup with a scrolling map
         #self.group.add(self.starship)
         #self.px, self.py = (self.map_layer.map_rect.width / 2, self.map_layer.map_rect.height / 2)
@@ -51,11 +51,9 @@ class pyGameAppMap(pyGameAppPhysics):
         #                    Config.screen_size[1]/ self.map_layer.map_rect.height)
 
         #self.wmap.group = pyscroll.PyscrollGroup(map_layer=self.wmap.layer)       
-
         # for use with map.
         # self.wmap.layer.center( self.starship.rect.center)
         # self.zoom = 1        
-        pass
 
     def on_event(self):
         for event in pygame.event.get():
@@ -110,10 +108,8 @@ class pyGameAppMap(pyGameAppPhysics):
         self.add_keypressed_time(pygame.K_q)
         self.add_keypressed_time(pygame.K_o)
         self.add_keypressed_time(pygame.K_p)
-
         
         self.loadBodiesFromMap()
-        #self.create_world_bounds()
         
         self.starship = Starship(self) 
         self.initMap()
@@ -121,12 +117,15 @@ class pyGameAppMap(pyGameAppPhysics):
     
   
     def on_render(self):
-        
-        bounce.Physics.surface.fill((0,0,0,0)) # alpha blending, boy!
-        for body in self.bodies:
-            self.drawBodies(body)
 
-        self.drawBodies(self.starship.body, wireFrame=True)
+        # copy the bg to the physics layer. (the physics surface layer is the same size of the bg)
+        self.wmap.layer.draw(bounce.Physics.surface,bounce.Physics.surface.get_rect())
+
+        # draw things in surface        
+        for body in self.bodies:
+            bounce.Physics.draw_body(body)
+
+        bounce.Physics.draw_body(self.starship.body, wireFrame=True)
 
         self.sprites.draw(bounce.Physics.surface)
 
@@ -134,20 +133,20 @@ class pyGameAppMap(pyGameAppPhysics):
         # pygame.draw.rect(self.physics.surface, (255,255,255),self.starship.rect,1)   
         #pygame.draw.rect(self.physics.surface,(255,255,255),self.starship.engine.rect,1) 
         # hack to use the plain render.
-        surfaces = list()
-
-        self.viewport.surface.fill((0,0,0,0))
-        self.viewport.surface.blit(bounce.Physics.surface, (0,0), self.viewport.rect)
-        surfaces.append( (self.viewport.surface, self.viewport.surface.get_rect(), 5)) # 0 works fine over the bg, behind the planets
-        self.wmap.layer.draw(self.screen, self.screen.get_rect(), surfaces)
-
-        #by my sidl
-        #self.wmap.layer.draw(self.screen, self.screen.get_rect())
-        #self.physics.draw(self.screen,  self.viewport)  
+        #surfaces = list()
         
+        #self.viewport.surface.fill(bounce.Colors.black_bga) # to preserve the bg
+        self.viewport.surface.blit(bounce.Physics.surface, (0,0), self.viewport.rect)
+
+        # annotate in the viewport
+        bounce.Physics.annotate(self.viewport.surface, fps=self.clock.get_fps())
+
+        # to the screen! no alpha needed to do the work
+        self.screen.blit(self.viewport.surface, (0,0))
+        
+
     def on_loop(self):
         self.sprites.update()
-        # dont zoom, for now
         
         b = pygame.mouse.get_pressed()
         pos = self.starship.rect.center
@@ -163,6 +162,7 @@ class pyGameAppMap(pyGameAppPhysics):
         self.viewport.rect.center = pos
 
         # do some clip for intelligent camera here.
+
         if self.viewport.rect.top < 0:
             self.viewport.rect.top = 0
         if self.viewport.rect.bottom >  bounce.Physics.pixel_rect.height:
@@ -172,6 +172,7 @@ class pyGameAppMap(pyGameAppPhysics):
             self.viewport.rect.left = 0
         if self.viewport.rect.right >  bounce.Physics.pixel_rect.width:
             self.viewport.rect.right = bounce.Physics.pixel_rect.width
+
 
 
 

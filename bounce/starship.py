@@ -90,6 +90,7 @@ class SpritePhysics(pygame.sprite.Sprite):
 
     def update(self):
   
+        
         if not self.body.awake:
             return
         x, y = bounce.ToPixels(self.body.transform.position)

@@ -22,6 +22,9 @@ from . starship import *
 
 # remap some global objects.
       
+def scale_tuple(v, x):
+    return b2Vec2(v) * x
+    
 def int_tuple(v):
     return (int(v[0]), int(v[1]) )
 
@@ -34,15 +37,20 @@ def init():
     global App
     global LOG
     global MapFile
+    global Colors
 
     Screen = settings.Screen
     Physics = settings.Physics
     App = settings.App
     LOG = settings.LOG
     MapFile = settings.MapFile
+    Colors = settings.Colors
 
     # static, non configurable options
-    Screen.surface_flags = pygame.SRCALPHA | pygame.HWSURFACE
+    # SRCALPHA slows down A LOT the game.
+    #Screen.surface_flags = pygame.SRCALPHA | pygame.HWSURFACE 
+    Screen.surface_flags = pygame.HWSURFACE | pygame.DOUBLEBUF
+    Screen.surface_flags_alpha = pygame.SRCALPHA | pygame.HWSURFACE | pygame.DOUBLEBUF
 
     init_screen()
     init_physics()

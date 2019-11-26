@@ -12,6 +12,7 @@ LogFile = None
 Screen = None
 Physics = None
 App = None
+Colors = None
 #LOG = None
 
 
@@ -108,14 +109,28 @@ def load_config(fname, init=True):
     global LogFile
     global MapFile
     global LOG
+    global Colors
+
     LogFile = config_data["LogFile"]
     MapFile = config_data["MapFile"]
 
+    # Create some default internal colors
+    
+    Colors = type('', (object,), {})()
+    Colors.Physics = type('', (object,), {})()
+    Colors.Physics.surface_bg = (0,0,0,0) # alpha
+    Colors.Physics.wall_bg = (255,100,100)
+    Colors.Physics.dbody_bg = (100,255,100)
+    Colors.Physics.sbody_bg = (100,100,100)
+    Colors.viewport_bg = (20,60,20)
+    Colors.black_bga = (0,0,0,0)
+
+    # #########################################################################
     # 
     # convert some configuration files in anothers
     #
     # convert physics gravity to tuple
-
+    #
     Physics.gravity = ( Physics.gravity[0], Physics.gravity[1])
 
 

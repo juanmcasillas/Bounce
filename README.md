@@ -37,3 +37,8 @@ Try to manage the objects right now.
 
 template for starship -> use it, then right click -> detach, if not, the object is stored as template and pytxml can't load it.
 also put all the files top->down (images down in the dir)
+
+
+# profiling python scripts
+
+python3 -m cProfile test_framework.py test_config.json 

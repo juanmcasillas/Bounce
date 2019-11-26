@@ -10,19 +10,31 @@ class pyGameAppPhysics(pyGameApp):
 
     def on_init(self):
         super().on_init()
-        self.create_world_bounds()
-
+        # create a simple walls to get something to see.
+        self.create_world_bounds() 
 
     def on_render(self):
-        bounce.Physics.surface.fill((0,0,0))
+        # to get a funny color in the background
+        bounce.Physics.clear_surface(bounce.Colors.viewport_bg)
         
         for wall in self.walls:
-            self.drawBodies(wall,color=(255,100,100))
+            bounce.Physics.draw_body(wall)
 
-        self.viewport.surface.fill((0,0,0,0))
-        self.viewport.surface.blit(bounce.Physics.surface, (0,0), self.viewport.rect)
+        
+        ##self.viewport.surface.fill(bounce.Colors.viewport_bg)
+        #self.viewport.surface.blit(bounce.Physics.surface, (0,0), self.viewport.rect)
+        #self.screen.blit(self.viewport.surface, (0,0))
+        
+        # copying to viewport is not needed.
+        ##self.viewport.surface.blit(bounce.Physics.surface, (0,0), self.viewport.rect)
+        self.screen.blit(bounce.Physics.surface, (0,0), self.viewport.rect)
+        bounce.Physics.annotate(self.screen, fps=self.clock.get_fps())
+       
+ 
+ 
+ 
 
-        bounce.drawPhysicsSurface(self.screen,  self.viewport.rect)
+
 
     def on_event(self):
         for event in pygame.event.get():
@@ -48,45 +60,9 @@ class pyGameAppPhysics(pyGameApp):
        self.walls.append( bounce.Physics.world.CreateStaticBody(position=(w/2,ww),   shapes=b2PolygonShape(box=(w/2,ww))))
        self.walls.append( bounce.Physics.world.CreateStaticBody(position=(w/2,h-ww), shapes=b2PolygonShape(box=(w/2,ww))))
 
-    def zoom(self, v):
-        return b2Vec2(v) * self._zoom
 
-    def drawBodies(self, body, color=None, wireFrame=False, surface=None):
-        surface = surface or bounce.Physics.surface
-            
-        if body.type == Box2D.b2_dynamicBody:
-            color = color or (100,255,100)
-        if body.type == Box2D.b2_staticBody:
-            color = color or (100,100,100)
 
-        for fixture in body.fixtures:
-            shape = fixture.shape
-      
-            if isinstance(shape, b2ChainShape):
-                vertices = [self.zoom(bounce.ToPixels(body.transform * v)) for v in shape.vertices]
-                if not wireFrame:  
-                    pygame.draw.lines(surface, color, False, vertices)
-                else:
-                    pygame.draw.lines(surface, color, False, vertices,1)
-
-            elif isinstance(shape, b2CircleShape):
-                ## todo, circle here
-                if not wireFrame:
-                    center = self.zoom(bounce.ToPixels(body.position))
-                    radius, _ = bounce.ScaleToPixels((shape.radius,0))
-
-                    pygame.draw.circle(surface, color, bounce.int_tuple(center), int(radius*self._zoom))
-                else:
-                    pygame.draw.circle(surface, color, bounce.int_tuple(center), int(radius*self._zoom), 1)
-
-            else:
-                #polygon here.
-                vertices = [self.zoom(bounce.ToPixels(body.transform * v)) for v in shape.vertices]
-                if not wireFrame:
-                    pygame.draw.polygon(surface, color, vertices)
-                else:
-                    pygame.draw.polygon(surface, color, vertices,1)
-    
+ 
 
 
 
