@@ -3,7 +3,16 @@ import bounce
 import pygame
 from Box2D import *
 
-
+#
+# the userData has to be filled with some meaninful, in order to allow
+# the system check what kind of collision happens. Fixture has a method
+# to get the body, also.
+#
+# store contacts as an integer
+# -> contact++
+# -> contact --
+# do things when overall contacts == 0.
+#
 
 class ContactListener(b2ContactListener):
     def __init__(self):
@@ -11,10 +20,14 @@ class ContactListener(b2ContactListener):
     def BeginContact(self, contact):
         
         if contact.fixtureA.userData:
-            print("A is the Starship")
+            # when the Starship is hit by something, this is
+            # the handler called
+            print("HIT->Starship by something")
         
         if contact.fixtureB.userData:
-            print("Collision fixture B is the Starship")
+            # when the  Starship HITS something, this is the
+            # handler called
+            print("Starship->HITS something")
 
     def EndContact(self, contact):
         pass
